@@ -1,7 +1,6 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode');
 const fs = require('fs');
-const qrImage = require('qrcode');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -11,21 +10,24 @@ const client = new Client({
 });
 
 client.on('qr', async (qr) => {
-    qrcode.generate(qr, { small: true });
-    console.log('Escaneie o QR Code acima para conectar.');
+    console.log('🔄 Gerando QR Code...');
 
-    // Salva a imagem do QR Code
-    const qrPath = 'qrcode.png';
-    await qrImage.toFile(qrPath, qr);
+    // Caminho para salvar a imagem do QR Code
+    const qrPath = './qrcode.png';
+    await qrcode.toFile(qrPath, qr);
 
-    // Número para enviar o QR Code (coloque seu número aqui no formato internacional)
-    const meuNumero = '5581996482912@c.us';
+    console.log('📤 Enviando QR Code para seu número no WhatsApp...');
+
+    const yourNumber = '5511999999999@c.us'; // Substitua pelo seu número no formato internacional
+    const media = MessageMedia.fromFilePath(qrPath);
 
     client.on('ready', async () => {
-        const media = MessageMedia.fromFilePath(qrPath);
-        await client.sendMessage(meuNumero, 'Aqui está seu QR Code para conexão:');
-        await client.sendMessage(meuNumero, media, { sendMediaAsDocument: true });
-        console.log('QR Code enviado para você no WhatsApp!');
+        try {
+            await client.sendMessage(yourNumber, media);
+            console.log('✅ QR Code enviado para seu número!');
+        } catch (err) {
+            console.error('❌ Erro ao enviar QR Code:', err);
+        }
     });
 });
 
