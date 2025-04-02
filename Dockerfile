@@ -1,20 +1,17 @@
-# Usa a imagem oficial do Node.js como base
+# Usa a imagem oficial do Node.js
 FROM node:18
 
 # Define o diretório de trabalho no container
 WORKDIR /app
 
-# Copia apenas os arquivos necessários primeiro (melhor para cache)
+# Copia apenas os arquivos essenciais primeiro (para otimizar cache)
 COPY package.json package-lock.json ./
 
 # Instala as dependências
 RUN npm install
 
-# Copia o restante dos arquivos do projeto
-COPY . .
+# Copia todos os arquivos do projeto
+COPY . . 
 
-# Expõe a porta (ajuste conforme necessário)
-EXPOSE 3000
-
-# Comando para iniciar a aplicação
+# Comando de inicialização
 CMD ["npm", "start"]
