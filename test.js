@@ -10,8 +10,7 @@ const port = process.env.PORT || 3000; // Porta dinâmica para Railway
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: false, // Agora ele escuta mensagens de todos, inclusive do próprio bot
-    allMessages: true
+    ignoreSelf: false, // Garante que ele escute todas as mensagens, incluindo as do próprio bot
 });
 
 // Servir QR Code via HTTP
@@ -37,11 +36,14 @@ client.on('ready', () => {
     console.log('✅ Bot conectado e pronto para receber mensagens!');
 });
 
-// 📩 **Escutar mensagens recebidas**
+// Escutar mensagens recebidas
 client.on('message', async (msg) => {
     console.log(`📩 Mensagem recebida de ${msg.from}: ${msg.body}`);
+    
+    if (msg.body === '!ping') {
+        msg.reply('🏓 Pong!');
+    }
 
-    // ✅ **Comando para enviar figurinhas**
     if (msg.body === '!s' && msg.hasQuotedMsg) {
         try {
             const quotedMsg = await msg.getQuotedMessage();
@@ -59,33 +61,29 @@ client.on('message', async (msg) => {
     }
 });
 
-// ✅ **Manter o bot ativo 24h**
-setInterval(async () => {
-    console.log("🚀 Verificando status do bot...");
-    const state = await client.getState();
-    console.log(`📡 Status do WhatsApp: ${state}`);
-}, 60000 * 5); // A cada 5 minutos
+// Capturar mensagens enviadas pelo próprio bot
+client.on('message_create', async (msg) => {
+    console.log(`📤 Mensagem enviada para ${msg.to}: ${msg.body}`);
+});
 
-// 📢 **Lidar com erros e reconexão automática**
+// Lidar com falhas de autenticação
 client.on('auth_failure', (msg) => {
     console.error('❌ Falha na autenticação:', msg);
 });
 
-client.on('disconnected', (reason) => {
+// Reconexão automática em caso de desconexão
+client.on('disconnected', async (reason) => {
     console.log(`⚠ Bot desconectado: ${reason}`);
     setTimeout(() => {
-        console.log("🔄 Tentando reconectar...");
+        console.log('🔄 Tentando reconectar...');
         client.initialize();
     }, 5000);
 });
 
-process.on('uncaughtException', (err) => {
-    console.error('⚠️ Erro inesperado:', err);
-});
-
-// 🚀 **Inicializar o bot e iniciar o servidor**
-client.initialize();
-
+// Iniciar servidor HTTP
 app.listen(port, () => {
     console.log(`📂 Servidor rodando! Acesse: https://seu-projeto.up.railway.app/qrcode`);
 });
+
+// Inicializar o bot
+client.initialize();
