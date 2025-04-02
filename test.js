@@ -14,8 +14,15 @@ const client = new Client({
     allMessages: true
 });
 
-// Servir QR Code via HTTP para download
-app.use('/qrcode', express.static(path.join(__dirname, 'qrcode.png')));
+// Servir QR Code via HTTP
+app.get('/qrcode', (req, res) => {
+    const qrPath = path.join(__dirname, 'qrcode.png');
+    if (fs.existsSync(qrPath)) {
+        res.sendFile(qrPath);
+    } else {
+        res.status(404).send('QR Code ainda não foi gerado.');
+    }
+});
 
 client.on('qr', async (qr) => {
     console.log('🔄 Gerando QR Code...');
@@ -30,9 +37,9 @@ client.on('ready', () => {
     console.log('✅ Bot está pronto!');
 });
 
-// Iniciar servidor HTTP
-app.listen(port, () => {
-    console.log(`📂 Servidor rodando! Acesse: http://localhost:${port}/qrcode para baixar o QR Code.`);
+// Iniciar servidor HTTP APÓS a inicialização do bot
+client.initialize().then(() => {
+    app.listen(port, () => {
+        console.log(`📂 Servidor rodando! Acesse: http://localhost:${port}/qrcode para baixar o QR Code.`);
+    });
 });
-
-client.initialize();
