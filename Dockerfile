@@ -1,39 +1,20 @@
-# Usa a imagem oficial do Node.js
+# Usa a imagem oficial do Node.js como base
 FROM node:18
 
-# Define o diretório de trabalho
+# Define o diretório de trabalho no container
 WORKDIR /app
 
-# Copia os arquivos do projeto
+# Copia apenas os arquivos necessários primeiro (melhor para cache)
 COPY package.json package-lock.json ./
+
+# Instala as dependências
 RUN npm install
 
+# Copia o restante dos arquivos do projeto
 COPY . .
 
-# Instala as dependências do Puppeteer
-RUN apt-get update && apt-get install -y \
-  libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
-  libxcomposite1 \
-  libxdamage1 \
-  libxrandr2 \
-  libgbm1 \
-  libpango-1.0-0 \
-  libasound2 \
-  libpangocairo-1.0-0 \
-  libgtk-3-0 \
-  libx11-xcb1 \
-  xdg-utils \
-  && rm -rf /var/lib/apt/lists/*
-
-# Define a variável de ambiente para Puppeteer rodar sem problemas
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
-# Expõe a porta (caso seu bot precise)
+# Expõe a porta (ajuste conforme necessário)
 EXPOSE 3000
 
-# Comando para iniciar o bot
-CMD ["node", "test.js"]
+# Comando para iniciar a aplicação
+CMD ["npm", "start"]
