@@ -6,7 +6,7 @@
     "start": "node test.js"
   },
   "dependencies": {
-    
+    "whatsapp-web.js": "^1.18.1",
     "qrcode-terminal": "^0.12.0"
   }
   
