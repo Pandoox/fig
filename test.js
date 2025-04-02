@@ -1,6 +1,11 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const fs = require('fs');
+const path = require('path');
+const express = require('express');
+
+const app = express();
+const port = 3000;
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -9,60 +14,25 @@ const client = new Client({
     allMessages: true
 });
 
+// Servir QR Code via HTTP para download
+app.use('/qrcode', express.static(path.join(__dirname, 'qrcode.png')));
+
 client.on('qr', async (qr) => {
     console.log('🔄 Gerando QR Code...');
 
-    // Caminho para salvar a imagem do QR Code
-    const qrPath = './qrcode.png';
+    const qrPath = path.join(__dirname, 'qrcode.png');
     await qrcode.toFile(qrPath, qr);
 
-    console.log('📤 Enviando QR Code para seu número no WhatsApp...');
-
-    const yourNumber = '5581999995382@c.us'; // Substitua pelo seu número no formato internacional
-    const media = MessageMedia.fromFilePath(qrPath);
-
-    client.on('ready', async () => {
-        try {
-            await client.sendMessage(yourNumber, media);
-            console.log('✅ QR Code enviado para seu número!');
-        } catch (err) {
-            console.error('❌ Erro ao enviar QR Code:', err);
-        }
-    });
+    console.log(`✅ QR Code salvo! Baixe em: http://localhost:${port}/qrcode`);
 });
 
 client.on('ready', () => {
     console.log('✅ Bot está pronto!');
 });
 
-const handleStickerCommand = async (msg) => {
-    console.log(`(Mensagem capturada) ${msg.from}: ${msg.body}`);
-
-    if (msg.body === '!s' && msg.hasQuotedMsg) {
-        try {
-            const quotedMsg = await msg.getQuotedMessage();
-            if (quotedMsg.hasMedia) {
-                const media = await quotedMsg.downloadMedia();
-                await client.sendMessage(msg.to, media, { sendMediaAsSticker: true }); // Envia no mesmo chat
-                console.log(`✅ Sticker enviado no chat: ${msg.to}`);
-            } else {
-                msg.reply('❌ A mensagem marcada não contém mídia.');
-            }
-        } catch (error) {
-            console.error('Erro ao processar o comando !s:', error);
-            msg.reply('❌ Ocorreu um erro ao criar a figurinha.');
-        }
-    }
-};
-
-// Captura mensagens recebidas
-client.on('message', async (msg) => {
-    await handleStickerCommand(msg);
-});
-
-// Captura mensagens enviadas pelo próprio bot ou pelo dono
-client.on('message_create', async (msg) => {
-    await handleStickerCommand(msg);
+// Iniciar servidor HTTP
+app.listen(port, () => {
+    console.log(`📂 Servidor rodando! Acesse: http://localhost:${port}/qrcode para baixar o QR Code.`);
 });
 
 client.initialize();
