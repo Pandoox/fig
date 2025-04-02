@@ -10,8 +10,10 @@ const port = process.env.PORT || 3000; // Porta dinâmica para Railway
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: false
+    ignoreSelf: true, // Agora ele escuta mensagens de todos, inclusive do próprio bot
+    allMessages: true
 });
+
 
 // Servir QR Code via HTTP
 app.get('/qrcode', (req, res) => {
