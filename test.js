@@ -10,10 +10,9 @@ const port = process.env.PORT || 3000; // Porta dinâmica para Railway
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: true, // Agora ele escuta mensagens de todos, inclusive do próprio bot
+    ignoreSelf: false, // Agora ele escuta mensagens de todos, inclusive do próprio bot
     allMessages: true
 });
-
 
 // Servir QR Code via HTTP
 app.get('/qrcode', (req, res) => {
@@ -60,13 +59,28 @@ client.on('message', async (msg) => {
     }
 });
 
-// 📢 **Lidar com erros**
+// ✅ **Manter o bot ativo 24h**
+setInterval(async () => {
+    console.log("🚀 Verificando status do bot...");
+    const state = await client.getState();
+    console.log(`📡 Status do WhatsApp: ${state}`);
+}, 60000 * 5); // A cada 5 minutos
+
+// 📢 **Lidar com erros e reconexão automática**
 client.on('auth_failure', (msg) => {
     console.error('❌ Falha na autenticação:', msg);
 });
 
 client.on('disconnected', (reason) => {
     console.log(`⚠ Bot desconectado: ${reason}`);
+    setTimeout(() => {
+        console.log("🔄 Tentando reconectar...");
+        client.initialize();
+    }, 5000);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('⚠️ Erro inesperado:', err);
 });
 
 // 🚀 **Inicializar o bot e iniciar o servidor**
