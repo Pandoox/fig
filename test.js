@@ -5,13 +5,12 @@ const path = require('path');
 const express = require('express');
 
 const app = express();
-const port = process.env.PORT || 3000; // Usa porta dinâmica no Railway
+const port = process.env.PORT || 3000; // Porta dinâmica para Railway
 
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: false,
-    allMessages: true
+    ignoreSelf: false
 });
 
 // Servir QR Code via HTTP
@@ -24,22 +23,22 @@ app.get('/qrcode', (req, res) => {
     }
 });
 
+// Gerar e salvar o QR Code
 client.on('qr', async (qr) => {
     console.log('🔄 Gerando QR Code...');
-
     const qrPath = path.join(__dirname, 'qrcode.png');
     await qrcode.toFile(qrPath, qr);
-
     console.log(`✅ QR Code salvo! Baixe em: https://seu-projeto.up.railway.app/qrcode`);
 });
 
+// Quando o bot estiver pronto
 client.on('ready', () => {
-    console.log('✅ Bot está pronto!');
+    console.log('✅ Bot conectado e pronto para receber mensagens!');
 });
 
 // 📩 **Escutar mensagens recebidas**
 client.on('message', async (msg) => {
-    console.log(`📩 Nova mensagem de ${msg.from}: ${msg.body}`);
+    console.log(`📩 Mensagem recebida de ${msg.from}: ${msg.body}`);
 
     // ✅ **Comando para enviar figurinhas**
     if (msg.body === '!s' && msg.hasQuotedMsg) {
@@ -59,9 +58,18 @@ client.on('message', async (msg) => {
     }
 });
 
+// 📢 **Lidar com erros**
+client.on('auth_failure', (msg) => {
+    console.error('❌ Falha na autenticação:', msg);
+});
+
+client.on('disconnected', (reason) => {
+    console.log(`⚠ Bot desconectado: ${reason}`);
+});
+
 // 🚀 **Inicializar o bot e iniciar o servidor**
-client.initialize().then(() => {
-    app.listen(port, () => {
-        console.log(`📂 Servidor rodando! Acesse: https://seu-projeto.up.railway.app/qrcode`);
-    });
+client.initialize();
+
+app.listen(port, () => {
+    console.log(`📂 Servidor rodando! Acesse: https://seu-projeto.up.railway.app/qrcode`);
 });
