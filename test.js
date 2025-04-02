@@ -64,8 +64,8 @@ client.on('message', async (msg) => {
 
 // Tentar reconectar se o bot for desconectado
 client.on('disconnected', (reason) => {
-    console.log(`⚠ Bot desconectado: ${reason}. Tentando reconectar...`);
-    client.initialize();
+    console.log(`⚠ Bot desconectado: ${reason}`);
+    client.initialize(); // Tenta reconectar automaticamente
 });
 
 // Inicializar o bot e iniciar o servidor
