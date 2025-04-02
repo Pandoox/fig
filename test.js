@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: false
+    ignoreSelf: false,
 });
 
 // Servir QR Code via HTTP
@@ -23,6 +23,7 @@ app.get('/qrcode', (req, res) => {
     }
 });
 
+// Gerar e salvar o QR Code
 client.on('qr', async (qr) => {
     console.log('🔄 Gerando QR Code...');
     const qrPath = path.join(__dirname, 'qrcode.png');
@@ -30,12 +31,19 @@ client.on('qr', async (qr) => {
     console.log(`✅ QR Code salvo! Baixe em: https://seu-projeto.up.railway.app/qrcode`);
 });
 
+// Quando o bot estiver pronto
 client.on('ready', () => {
     console.log('✅ Bot conectado e pronto para receber mensagens!');
+    client.sendPresenceUpdate('available');
 });
 
+// Escutar mensagens recebidas
 client.on('message', async (msg) => {
     console.log(`📩 Mensagem recebida de ${msg.from}: ${msg.body}`);
+    
+    if (msg.body.toLowerCase() === '!ping') {
+        msg.reply('Pong! 🏓');
+    }
 
     if (msg.body === '!s' && msg.hasQuotedMsg) {
         try {
@@ -54,12 +62,13 @@ client.on('message', async (msg) => {
     }
 });
 
+// Tentar reconectar se o bot for desconectado
 client.on('disconnected', (reason) => {
-    console.log(`⚠ Bot desconectado: ${reason}`);
-    console.log('Tentando reconectar...');
+    console.log(`⚠ Bot desconectado: ${reason}. Tentando reconectar...`);
     client.initialize();
 });
 
+// Inicializar o bot e iniciar o servidor
 client.initialize();
 
 app.listen(port, () => {
