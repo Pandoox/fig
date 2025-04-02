@@ -10,7 +10,8 @@ const port = process.env.PORT || 3000; // Porta dinâmica para Railway
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { args: ['--no-sandbox'], headless: true },
-    ignoreSelf: false, // Garante que ele escute todas as mensagens, incluindo as do próprio bot
+    ignoreSelf: false,
+    allMessages: true
 });
 
 // Servir QR Code via HTTP
@@ -36,14 +37,35 @@ client.on('ready', () => {
     console.log('✅ Bot conectado e pronto para receber mensagens!');
 });
 
+// Manter a sessão ativa
+setInterval(() => {
+    console.log('🔄 Mantendo a sessão ativa...');
+    client.sendPresenceUpdate('available');
+}, 30000);
+
 // Escutar mensagens recebidas
 client.on('message', async (msg) => {
     console.log(`📩 Mensagem recebida de ${msg.from}: ${msg.body}`);
-    
-    if (msg.body === '!ping') {
-        msg.reply('🏓 Pong!');
-    }
+    await handleStickerCommand(msg);
+});
 
+// Escutar mensagens enviadas pelo próprio bot
+client.on('message_create', async (msg) => {
+    console.log(`📤 Mensagem enviada para ${msg.to}: ${msg.body}`);
+    await handleStickerCommand(msg);
+});
+
+// Lidar com desconexão e tentar reconectar
+client.on('disconnected', (reason) => {
+    console.log(`⚠ Bot desconectado: ${reason}`);
+    setTimeout(() => {
+        console.log('🔄 Tentando reconectar...');
+        client.initialize();
+    }, 5000);
+});
+
+// Comando para criar figurinhas
+async function handleStickerCommand(msg) {
     if (msg.body === '!s' && msg.hasQuotedMsg) {
         try {
             const quotedMsg = await msg.getQuotedMessage();
@@ -59,31 +81,11 @@ client.on('message', async (msg) => {
             msg.reply('❌ Ocorreu um erro ao criar a figurinha.');
         }
     }
-});
+}
 
-// Capturar mensagens enviadas pelo próprio bot
-client.on('message_create', async (msg) => {
-    console.log(`📤 Mensagem enviada para ${msg.to}: ${msg.body}`);
-});
+// Inicializar o bot e iniciar o servidor
+client.initialize();
 
-// Lidar com falhas de autenticação
-client.on('auth_failure', (msg) => {
-    console.error('❌ Falha na autenticação:', msg);
-});
-
-// Reconexão automática em caso de desconexão
-client.on('disconnected', async (reason) => {
-    console.log(`⚠ Bot desconectado: ${reason}`);
-    setTimeout(() => {
-        console.log('🔄 Tentando reconectar...');
-        client.initialize();
-    }, 5000);
-});
-
-// Iniciar servidor HTTP
 app.listen(port, () => {
     console.log(`📂 Servidor rodando! Acesse: https://seu-projeto.up.railway.app/qrcode`);
 });
-
-// Inicializar o bot
-client.initialize();
