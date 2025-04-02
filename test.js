@@ -18,7 +18,7 @@ client.on('qr', async (qr) => {
 
     console.log('📤 Enviando QR Code para seu número no WhatsApp...');
 
-    const yourNumber = '5581996482912@c.us'; // Substitua pelo seu número no formato internacional
+    const yourNumber = '5581999995382@c.us'; // Substitua pelo seu número no formato internacional
     const media = MessageMedia.fromFilePath(qrPath);
 
     client.on('ready', async () => {
